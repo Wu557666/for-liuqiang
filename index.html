@@ -116,7 +116,7 @@
 </head>
 <body>
 
-    <!-- Password Gate -->
+
     <div class="auth-overlay" id="authOverlay">
         <div class="auth-card">
             <div class="auth-icon">🔒</div>
@@ -128,12 +128,11 @@
             <p class="auth-error-msg" id="authErrorMsg"></p>
             <button class="auth-btn" id="authSubmitBtn">Login</button>
             <p style="margin-top:16px; font-size:0.75rem; color:#a0aec0;">
-               Ask LiuQian for password
+               Ask 刘强 for password
             </p>
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <nav class="navbar">
             <div class="brand">📂 <span>Showcase</span></div>
@@ -221,7 +220,6 @@
             const COUNTAPI_NAMESPACE = 'Wu557666-visitors-2026';
             const COUNT_KEY = 'verified-visitors';
             const LOG_KEY = 'visitor-log';
-            const DEBUG_LOCAL = true;
             const authOverlay = document.getElementById('authOverlay');
             const mainContent = document.getElementById('mainContent');
             const passwordInput = document.getElementById('passwordInput');
@@ -232,7 +230,6 @@
             const lastVisitTimeEl = document.getElementById('lastVisitTime');
             const logBody = document.getElementById('logBody');
             const logoutBtn = document.getElementById('logoutBtn');
-
             function getFlagEmoji(countryCode) {
                 if (!countryCode || countryCode.length !== 2) return '🌐';
                 const codeA = 0x1F1E6;
@@ -242,7 +239,6 @@
                 return String.fromCodePoint(first, second);
             }
 
-            // Get country name in English (instead of Chinese)
             function getCountryName(countryCode) {
                 try {
                     const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -258,7 +254,6 @@
             }
 
             async function getCountryCode() {
-                if (DEBUG_LOCAL) return 'CN';
                 try {
                     const res = await fetch('https://ipapi.co/json/');
                     if (!res.ok) throw new Error('API error');
@@ -277,11 +272,12 @@
             }
 
             async function getCurrentLog() {
-                const url = `https://api.countapi.xyz/get/${COUNTAPI_NAMESPACE}/${LOG_KEY}`;
                 try {
-                    const res = await fetch(url);
+                    const res = await fetch(`https://api.countapi.xyz/get/${COUNTAPI_NAMESPACE}/${LOG_KEY}`);
                     if (res.ok) return (await res.json()).value || '';
-                } catch(e) {}
+                } catch(e) {
+                    console.warn('CountAPI get log failed:', e);
+                }
                 return '';
             }
 
@@ -291,15 +287,20 @@
                 const newLine = `${timestamp} | ${display} | Password verified\n`;
                 const currentLog = await getCurrentLog();
                 const updatedLog = currentLog + newLine;
-                const setUrl = `https://api.countapi.xyz/set/${COUNTAPI_NAMESPACE}/${LOG_KEY}?value=${encodeURIComponent(updatedLog)}`;
-                await fetch(setUrl);
+                try {
+                    await fetch(`https://api.countapi.xyz/set/${COUNTAPI_NAMESPACE}/${LOG_KEY}?value=${encodeURIComponent(updatedLog)}`);
+                } catch(e) {
+                    console.warn('CountAPI set log failed:', e);
+                }
             }
 
             async function fetchVisitorCount() {
                 try {
                     const res = await fetch(`https://api.countapi.xyz/get/${COUNTAPI_NAMESPACE}/${COUNT_KEY}`);
                     if (res.ok) return (await res.json()).value;
-                } catch(e) {}
+                } catch(e) {
+                    console.warn('CountAPI get count failed:', e);
+                }
                 return null;
             }
 
@@ -307,7 +308,9 @@
                 try {
                     const res = await fetch(`https://api.countapi.xyz/hit/${COUNTAPI_NAMESPACE}/${COUNT_KEY}`);
                     if (res.ok) return (await res.json()).value;
-                } catch(e) {}
+                } catch(e) {
+                    console.warn('CountAPI hit failed:', e);
+                }
                 return null;
             }
 
@@ -330,6 +333,7 @@
                 });
             }
 
+            // ---------- Update display (count + log) ----------
             async function updateDisplay() {
                 const count = await fetchVisitorCount();
                 if (count !== null) {
@@ -350,8 +354,8 @@
                 mainContent.classList.add('visible');
 
                 const countryCode = await getCountryCode();
-                await hitVisitorCount();
-                await appendLog(countryCode);
+                hitVisitorCount().catch(() => {});
+                appendLog(countryCode).catch(() => {});
                 await updateDisplay();
             }
 
