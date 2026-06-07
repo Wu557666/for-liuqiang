@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Works Showcase - Password Protected</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-light: #5a6c7d;
+            --accent: #4f6ef7;
+            --danger: #e53e3e;
+            --border: #e2e8f0;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --max-width: 960px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .auth-overlay {
+            position: fixed; inset:0; z-index:9999;
+            display: flex; align-items:center; justify-content:center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .auth-overlay.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+        .auth-card {
+            background: rgba(255,255,255,0.95); backdrop-filter:blur(20px);
+            border-radius:20px; padding:44px 36px 36px; width:90%; max-width:420px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.35); text-align:center;
+        }
+        .auth-icon {
+            width:64px; height:64px; margin:0 auto 20px;
+            background: linear-gradient(135deg, #4f6ef7, #6c8cff);
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-size:30px; color:#fff;
+        }
+        .auth-card h2 { font-size:1.6rem; font-weight:700; margin-bottom:8px; color:#1a202c; }
+        .auth-subtitle { font-size:0.9rem; color:#718096; margin-bottom:24px; }
+        .auth-input-group { margin-bottom:20px; }
+        .auth-input-group input {
+            width:100%; padding:14px 20px; font-size:1rem;
+            border:2px solid var(--border); border-radius:12px; outline:none;
+            transition:0.2s; background:#f8fafc;
+        }
+        .auth-input-group input:focus {
+            border-color:var(--accent); box-shadow:0 0 0 4px rgba(79,110,247,0.1); background:#fff;
+        }
+        .auth-error-msg { color:var(--danger); font-size:0.85rem; min-height:20px; margin-bottom:8px; }
+        .auth-btn {
+            width:100%; padding:14px; font-size:1rem; font-weight:600;
+            background: linear-gradient(135deg, #4f6ef7, #3b54d4); color:#fff;
+            border:none; border-radius:12px; cursor:pointer; transition:0.2s;
+        }
+        .auth-btn:hover { background:linear-gradient(135deg, #5f7ef8, #4b64e4); }
+
+        .main-content { display:none; animation: fadeInUp 0.5s ease; }
+        .main-content.visible { display:block; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+        .navbar {
+            position:sticky; top:0; z-index:100; background:rgba(255,255,255,0.85);
+            backdrop-filter:blur(16px); border-bottom:1px solid var(--border);
+            height:64px; display:flex; align-items:center; padding:0 24px; gap:16px;
+        }
+        .navbar .brand { font-weight:700; font-size:1.15rem; }
+        .navbar .visitor-badge {
+            display:flex; align-items:center; gap:6px;
+            background:#f0f4ff; padding:7px 14px; border-radius:20px;
+            font-size:0.85rem; font-weight:600; color:var(--accent);
+        }
+        .navbar .logout-btn {
+            background:none; border:1px solid var(--border); padding:7px 16px;
+            border-radius:20px; cursor:pointer; font-size:0.85rem; color:#718096;
+        }
+        .container { max-width:var(--max-width); margin:0 auto; padding:32px 20px 60px; }
+
+        .hero { text-align:center; padding:40px 20px 20px; }
+        .hero h1 { font-size:2.2rem; font-weight:800; }
+
+        .section { margin-top:40px; }
+        .section-title { font-size:1.5rem; font-weight:700; margin-bottom:20px; border-bottom:3px solid #edf2f7; }
+        .image-gallery { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:24px; }
+        .image-card { background:var(--card-bg); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+        .image-card img { width:100%; height:220px; object-fit:cover; }
+        .video-wrapper { position:relative; padding-bottom:56.25%; border-radius:var(--radius); overflow:hidden; background:#000; }
+        .video-wrapper iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+
+        .article-block { background:var(--card-bg); border-radius:var(--radius); padding:28px 32px; box-shadow:var(--shadow); }
+        .stats-panel { background:var(--card-bg); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); display:flex; flex-wrap:wrap; gap:24px; }
+        .stat-item { flex:1; text-align:center; }
+        .stat-number { font-size:2.5rem; font-weight:800; color:var(--accent); }
+
+        .log-table { width:100%; border-collapse:collapse; margin-top:12px; font-size:0.9rem; }
+        .log-table th, .log-table td { padding:8px 12px; border-bottom:1px solid var(--border); text-align:left; }
+        .log-table th { background:#f8fafc; font-weight:600; }
+
+        .site-footer { text-align:center; padding:20px; color:#a0aec0; font-size:0.8rem; border-top:1px solid var(--border); margin-top:40px; }
+        @media (max-width:768px) {
+            .navbar { padding:0 12px; flex-wrap:wrap; height:auto; }
+            .image-gallery { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Password Gate -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card">
+            <div class="auth-icon">🔒</div>
+            <h2>PROTECTED BY PASSWORD</h2>
+            <p class="auth-subtitle">Enter password to access the site</p>
+            <div class="auth-input-group">
+                <input type="password" id="passwordInput" placeholder="INPUT PASSWORD" autocomplete="off">
+            </div>
+            <p class="auth-error-msg" id="authErrorMsg"></p>
+            <button class="auth-btn" id="authSubmitBtn">Login</button>
+            <p style="margin-top:16px; font-size:0.75rem; color:#a0aec0;">
+               Ask LiuQian for password
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <nav class="navbar">
+            <div class="brand">📂 <span>Showcase</span></div>
+            <div class="visitor-badge">
+                🟢 Visitors: <strong id="visitorCountDisplay">--</strong>
+            </div>
+            <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+        </nav>
+
+        <div class="container">
+            <header class="hero">
+                <h1>🎨 My Works Showcase</h1>
+                <p>Images · Videos · Articles · Visitor Log (global flag auto‑detection)</p>
+            </header>
+
+            <section class="section" id="gallery">
+                <h2 class="section-title">📷 Image Gallery</h2>
+                <div class="image-gallery">
+                    <figure class="image-card">
+                        <img src="https://picsum.photos/seed/mountain/600/400" alt="Mountain sunrise">
+                        <figcaption style="padding:16px;"><h4>🏔️ Mountain Sunrise</h4><p>First sunlight piercing through the clouds.</p></figcaption>
+                    </figure>
+                    <figure class="image-card">
+                        <img src="https://picsum.photos/seed/ocean/600/400" alt="Seaside">
+                        <figcaption style="padding:16px;"><h4>🌊 Quiet Seashore</h4><p>The coastline at dusk with soft pink‑purple sky.</p></figcaption>
+                    </figure>
+                    <figure class="image-card">
+                        <img src="https://picsum.photos/seed/forest/600/400" alt="Forest">
+                        <figcaption style="padding:16px;"><h4>🍂 Autumn Forest</h4><p>Golden leaves covering the forest trail.</p></figcaption>
+                    </figure>
+                </div>
+            </section>
+
+            <section class="section" id="video">
+                <h2 class="section-title">🎬 Video</h2>
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Demo video" allowfullscreen></iframe>
+                </div>
+            </section>
+
+            <section class="section" id="article">
+                <h2 class="section-title">📝 Introduction</h2>
+                <article class="article-block">
+                    <h3>Background</h3>
+                    <p>A password‑protected static showcase page, deployed on GitHub Pages. All visitor logs only record the visitor’s country, no IP address or personal information is stored.</p>
+                    <h3>How to use</h3>
+                    <p>Enter the correct password to browse all content. Each successful verification records the time and country, displayed in the log area below.</p>
+                </article>
+            </section>
+
+            <section class="section" id="stats">
+                <h2 class="section-title">📊 Stats & Logs</h2>
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalVisitors">--</div>
+                        <div>Total Visitors</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="lastVisitTime">--</div>
+                        <div>Last Visit Time</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:28px;">🌍 Recent Visitors (global flag auto‑detection)</h3>
+                <div style="overflow-x:auto;">
+                    <table class="log-table" id="logTable">
+                        <thead><tr><th>Time</th><th>Country / Region</th><th>Note</th></tr></thead>
+                        <tbody id="logBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+                <p style="font-size:0.8rem; color:#a0aec0; margin-top:8px;">
+                    ✅ Only the visitor’s country is recorded. Data is publicly stored via CountAPI.
+                </p>
+            </section>
+        </div>
+
+        <footer class="site-footer">
+            <p>© 2026 My Showcase · Powered by GitHub Pages</p>
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            const CORRECT_PASSWORD = '我的密码2026';
+            const COUNTAPI_NAMESPACE = 'Wu557666-visitors-2026';
+            const COUNT_KEY = 'verified-visitors';
+            const LOG_KEY = 'visitor-log';
+            const DEBUG_LOCAL = true;
+            const authOverlay = document.getElementById('authOverlay');
+            const mainContent = document.getElementById('mainContent');
+            const passwordInput = document.getElementById('passwordInput');
+            const authSubmitBtn = document.getElementById('authSubmitBtn');
+            const authErrorMsg = document.getElementById('authErrorMsg');
+            const visitorCountDisplay = document.getElementById('visitorCountDisplay');
+            const totalVisitorsEl = document.getElementById('totalVisitors');
+            const lastVisitTimeEl = document.getElementById('lastVisitTime');
+            const logBody = document.getElementById('logBody');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            function getFlagEmoji(countryCode) {
+                if (!countryCode || countryCode.length !== 2) return '🌐';
+                const codeA = 0x1F1E6;
+                const letterA = 'A'.charCodeAt(0);
+                const first  = countryCode[0].toUpperCase().charCodeAt(0) - letterA + codeA;
+                const second = countryCode[1].toUpperCase().charCodeAt(0) - letterA + codeA;
+                return String.fromCodePoint(first, second);
+            }
+
+            // Get country name in English (instead of Chinese)
+            function getCountryName(countryCode) {
+                try {
+                    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+                    return regionNames.of(countryCode.toUpperCase()) || countryCode;
+                } catch {
+                    return countryCode;
+                }
+            }
+
+            function formatCountry(countryCode) {
+                if (!countryCode) return '🌐 Unknown';
+                return `${getFlagEmoji(countryCode)} ${getCountryName(countryCode)}`;
+            }
+
+            async function getCountryCode() {
+                if (DEBUG_LOCAL) return 'CN';
+                try {
+                    const res = await fetch('https://ipapi.co/json/');
+                    if (!res.ok) throw new Error('API error');
+                    const data = await res.json();
+                    return data.country_code || null;
+                } catch {
+                    try {
+                        const res2 = await fetch('https://ip-api.com/json/?fields=countryCode');
+                        if (!res2.ok) throw new Error('Fallback failed');
+                        const data2 = await res2.json();
+                        return data2.countryCode || null;
+                    } catch {
+                        return null;
+                    }
+                }
+            }
+
+            async function getCurrentLog() {
+                const url = `https://api.countapi.xyz/get/${COUNTAPI_NAMESPACE}/${LOG_KEY}`;
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) return (await res.json()).value || '';
+                } catch(e) {}
+                return '';
+            }
+
+            async function appendLog(countryCode) {
+                const timestamp = new Date().toISOString();
+                const display = formatCountry(countryCode);
+                const newLine = `${timestamp} | ${display} | Password verified\n`;
+                const currentLog = await getCurrentLog();
+                const updatedLog = currentLog + newLine;
+                const setUrl = `https://api.countapi.xyz/set/${COUNTAPI_NAMESPACE}/${LOG_KEY}?value=${encodeURIComponent(updatedLog)}`;
+                await fetch(setUrl);
+            }
+
+            async function fetchVisitorCount() {
+                try {
+                    const res = await fetch(`https://api.countapi.xyz/get/${COUNTAPI_NAMESPACE}/${COUNT_KEY}`);
+                    if (res.ok) return (await res.json()).value;
+                } catch(e) {}
+                return null;
+            }
+
+            async function hitVisitorCount() {
+                try {
+                    const res = await fetch(`https://api.countapi.xyz/hit/${COUNTAPI_NAMESPACE}/${COUNT_KEY}`);
+                    if (res.ok) return (await res.json()).value;
+                } catch(e) {}
+                return null;
+            }
+
+            async function renderLogTable() {
+                const logStr = await getCurrentLog();
+                const lines = logStr.trim().split('\n').filter(l => l.trim());
+                const recent = lines.slice(-20).reverse();
+                logBody.innerHTML = '';
+                if (recent.length === 0) {
+                    logBody.innerHTML = '<tr><td colspan="3">No records yet</td></tr>';
+                    return;
+                }
+                recent.forEach(line => {
+                    const parts = line.split('|').map(s => s.trim());
+                    if (parts.length >= 2) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${parts[0]}</td><td>${parts[1]}</td><td>${parts[2]}</td>`;
+                        logBody.appendChild(tr);
+                    }
+                });
+            }
+
+            async function updateDisplay() {
+                const count = await fetchVisitorCount();
+                if (count !== null) {
+                    if (visitorCountDisplay) visitorCountDisplay.textContent = count;
+                    if (totalVisitorsEl) totalVisitorsEl.textContent = count;
+                }
+                const authTime = sessionStorage.getItem('authTime');
+                if (lastVisitTimeEl && authTime) {
+                    lastVisitTimeEl.textContent = new Date(parseInt(authTime)).toLocaleString('en');
+                }
+                await renderLogTable();
+            }
+
+            async function onLoginSuccess() {
+                sessionStorage.setItem('authenticated', 'true');
+                sessionStorage.setItem('authTime', Date.now().toString());
+                authOverlay.classList.add('hidden');
+                mainContent.classList.add('visible');
+
+                const countryCode = await getCountryCode();
+                await hitVisitorCount();
+                await appendLog(countryCode);
+                await updateDisplay();
+            }
+
+            async function handleLogin() {
+                const inputPw = passwordInput.value.trim();
+                if (inputPw !== CORRECT_PASSWORD) {
+                    authErrorMsg.textContent = '❌ Wrong password';
+                    return;
+                }
+                authErrorMsg.textContent = '';
+                await onLoginSuccess();
+            }
+
+            function logout() {
+                sessionStorage.removeItem('authenticated');
+                sessionStorage.removeItem('authTime');
+                authOverlay.classList.remove('hidden');
+                mainContent.classList.remove('visible');
+                passwordInput.value = '';
+            }
+
+            authSubmitBtn.addEventListener('click', handleLogin);
+            passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+            logoutBtn.addEventListener('click', logout);
+
+            (async function init() {
+                const isAuth = sessionStorage.getItem('authenticated') === 'true';
+                if (isAuth) {
+                    authOverlay.classList.add('hidden');
+                    mainContent.classList.add('visible');
+                    await updateDisplay();
+                } else {
+                    authOverlay.classList.remove('hidden');
+                    mainContent.classList.remove('visible');
+                }
+            })();
+        })();
+    </script>
+</body>
+</html>
